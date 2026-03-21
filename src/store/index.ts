@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Task, DailyRecord, TaskStatus } from '@/types'
 import { getCurrentSlot, getNextSlot, getTimeToNextSlot, WORKDAY_SCHEDULE, SUNDAY_SCHEDULE } from '@/config/schedule'
-import { notify, playWarning } from '@/utils/notifier'
+import { notify } from '@/utils/notifier'
 
 // 生成唯一ID
 const generateId = (): string => {
