@@ -1,13 +1,13 @@
 <template>
-  <div class="space-y-8">
-    <h1 class="text-3xl font-bold text-gray-900">周末规划</h1>
+  <div class="space-y-6 md:space-y-8 pb-24 md:pb-8">
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-900">周末规划</h1>
     
-    <div class="grid grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 xl:gap-8 w-full">
       <!-- 左栏：NPC 悬赏发布区 -->
-      <div class="bg-white rounded-2xl shadow-lg p-8">
-        <div class="flex items-center gap-3 mb-6">
-          <div class="text-2xl">📅</div>
-          <h2 class="text-2xl font-semibold text-gray-900">NPC 悬赏发布</h2>
+      <div class="bg-white rounded-2xl shadow-lg p-6 lg:p-8 w-full h-full">
+        <div class="flex items-center gap-3 mb-4 lg:mb-6">
+          <div class="text-xl lg:text-2xl">📅</div>
+          <h2 class="text-xl lg:text-2xl font-semibold text-gray-900">NPC 悬赏发布</h2>
         </div>
         
         <form @submit.prevent="handleSubmitTask" class="space-y-6">
@@ -17,7 +17,7 @@
             <input 
               type="text" 
               v-model="taskForm.title"
-              class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              class="w-full h-12 px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               placeholder="请输入任务名称"
               required
             />
@@ -28,7 +28,7 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">归属模块</label>
             <select 
               v-model="taskForm.moduleId"
-              class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              class="w-full h-12 px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               required
             >
               <option value="">请选择模块</option>
@@ -46,7 +46,7 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">任务类型</label>
             <select 
               v-model="taskForm.type"
-              class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              class="w-full h-12 px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               required
             >
               <option value="">请选择任务类型</option>
@@ -61,7 +61,7 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">任务容量</label>
             <select 
               v-model="taskForm.capacity"
-              class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              class="w-full h-12 px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               required
             >
               <option value="">请选择任务容量</option>
@@ -77,7 +77,7 @@
             <input 
               type="number" 
               v-model.number="taskForm.baseScore"
-              class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              class="w-full h-12 px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               min="1"
               max="100"
               required
@@ -214,7 +214,7 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">计划执行日期</label>
             <select 
               v-model="taskForm.plannedDate"
-              class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              class="w-full h-12 px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               required
             >
               <option value="">请选择日期</option>
@@ -235,7 +235,7 @@
           <!-- 提交按钮 -->
           <button 
             type="submit"
-            class="w-full py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
+            class="w-full py-3 lg:py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-bold text-sm lg:text-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
           >
             发布悬赏至任务板
           </button>
@@ -243,10 +243,10 @@
       </div>
       
       <!-- 右栏：周六复盘与清算中心 -->
-      <div class="bg-gradient-to-br from-gray-900 to-indigo-900 rounded-2xl shadow-lg p-8 text-white">
-        <div class="flex items-center gap-3 mb-6">
-          <div class="text-2xl">🏆</div>
-          <h2 class="text-2xl font-semibold">周六复盘与清算中心</h2>
+      <div class="bg-gradient-to-br from-gray-900 to-indigo-900 rounded-2xl shadow-lg p-6 lg:p-8 text-white w-full h-full">
+        <div class="flex items-center gap-3 mb-4 lg:mb-6">
+          <div class="text-xl lg:text-2xl">🏆</div>
+          <h2 class="text-xl lg:text-2xl font-semibold">周六复盘与清算中心</h2>
         </div>
         
         <!-- 本周积分 -->
@@ -284,7 +284,7 @@
         
         <!-- 解锁按钮 -->
         <button 
-          class="w-full py-4 rounded-xl font-bold text-lg transition-all transform hover:-translate-y-1"
+          class="w-full py-3 lg:py-4 rounded-xl font-bold text-sm lg:text-lg transition-all transform hover:-translate-y-1"
           :class="{
             'bg-gray-600 text-gray-300 cursor-not-allowed': reviewText.length < 10 || !isSaturday,
             'bg-gradient-to-r from-yellow-400 to-amber-500 text-gray-900 shadow-lg hover:shadow-xl animate-pulse': reviewText.length >= 10 && isSaturday
@@ -298,10 +298,10 @@
     </div>
     
     <!-- 待执行任务审查区 -->
-    <div class="bg-white rounded-2xl shadow-lg p-8">
-      <div class="flex items-center gap-3 mb-6">
-        <div class="text-2xl">📋</div>
-        <h2 class="text-2xl font-semibold text-gray-900">待执行任务审查区</h2>
+    <div class="bg-white rounded-2xl shadow-lg p-6 lg:p-8">
+      <div class="flex items-center gap-3 mb-4 lg:mb-6">
+        <div class="text-xl lg:text-2xl">📋</div>
+        <h2 class="text-xl lg:text-2xl font-semibold text-gray-900">待执行任务审查区</h2>
       </div>
       
       <!-- 战时死锁警告 -->
