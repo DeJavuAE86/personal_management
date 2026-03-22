@@ -4,7 +4,7 @@
     
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 xl:gap-8 w-full">
       <!-- 左栏：NPC 悬赏发布区 -->
-      <div class="bg-white rounded-2xl shadow-lg p-6 lg:p-8 w-full h-full">
+      <div class="bg-white rounded-2xl shadow-lg p-6 lg:p-8 w-full h-full" :class="{ 'hidden xl:block': isSaturday }">
         <div class="flex items-center gap-3 mb-4 lg:mb-6">
           <div class="text-xl lg:text-2xl">📅</div>
           <h2 class="text-xl lg:text-2xl font-semibold text-gray-900">NPC 悬赏发布</h2>
@@ -243,7 +243,7 @@
       </div>
       
       <!-- 右栏：周六复盘与清算中心 -->
-      <div class="bg-gradient-to-br from-gray-900 to-indigo-900 rounded-2xl shadow-lg p-6 lg:p-8 text-white w-full h-full">
+      <div class="bg-gradient-to-br from-gray-900 to-indigo-900 rounded-2xl shadow-lg p-6 lg:p-8 text-white w-full h-full" :class="{ 'hidden xl:block': !isSaturday }">
         <div class="flex items-center gap-3 mb-4 lg:mb-6">
           <div class="text-xl lg:text-2xl">🏆</div>
           <h2 class="text-xl lg:text-2xl font-semibold">周六复盘与清算中心</h2>
@@ -298,7 +298,7 @@
     </div>
     
     <!-- 待执行任务审查区 -->
-    <div class="bg-white rounded-2xl shadow-lg p-6 lg:p-8">
+    <div class="bg-white rounded-2xl shadow-lg p-6 lg:p-8" :class="{ 'hidden xl:block': isSaturday }">
       <div class="flex items-center gap-3 mb-4 lg:mb-6">
         <div class="text-xl lg:text-2xl">📋</div>
         <h2 class="text-xl lg:text-2xl font-semibold text-gray-900">待执行任务审查区</h2>

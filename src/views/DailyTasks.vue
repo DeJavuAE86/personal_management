@@ -261,10 +261,7 @@ const successScore = ref(0)
 // 结算结果
 const settleResult = ref<{ status: string; finalScore: number } | null>(null)
 
-// 当前日期
-const currentDate = computed(() => {
-  return systemStore.currentDate
-})
+
 
 // 更新显示日期
 const updateDisplayDate = () => {
