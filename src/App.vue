@@ -144,48 +144,14 @@
       
 
       
-      <!-- 时空穿梭机 -->
-      <div class="p-4 border-t border-slate-100 flex justify-center gap-2">
-        <button 
-          class="text-xs px-2 py-1 rounded-md transition-all"
-          :class="{
-            'bg-blue-100 text-blue-800': systemStore.mockDay === 'REAL',
-            'bg-gray-100 text-gray-600 hover:bg-gray-200': systemStore.mockDay !== 'REAL'
-          }"
-          @click="systemStore.mockDay = 'REAL'"
-        >
-          [真实时间]
-        </button>
-        <button 
-          class="text-xs px-2 py-1 rounded-md transition-all"
-          :class="{
-            'bg-blue-100 text-blue-800': systemStore.mockDay === 'SATURDAY',
-            'bg-gray-100 text-gray-600 hover:bg-gray-200': systemStore.mockDay !== 'SATURDAY'
-          }"
-          @click="systemStore.mockDay = 'SATURDAY'"
-        >
-          [测周六]
-        </button>
-        <button 
-          class="text-xs px-2 py-1 rounded-md transition-all"
-          :class="{
-            'bg-blue-100 text-blue-800': systemStore.mockDay === 'SUNDAY',
-            'bg-gray-100 text-gray-600 hover:bg-gray-200': systemStore.mockDay !== 'SUNDAY'
-          }"
-          @click="systemStore.mockDay = 'SUNDAY'"
-        >
-          [测周日]
-        </button>
-      </div>
-      
-      <!-- PWA 安装按钮 -->
+      <!-- 同步中心按钮 -->
       <div class="p-4 border-t border-slate-100">
         <button 
-          v-if="deferredPrompt" 
-          @click="installPWA"
-          class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-3 rounded-xl font-bold hover:from-blue-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg"
+          @click="syncModalVisible = true"
+          class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-3 rounded-xl font-bold hover:from-blue-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
         >
-          💻 安装客户端
+          <Cloud class="w-5 h-5" />
+          ☁️ 同步中心
         </button>
       </div>
     </aside>
@@ -213,6 +179,12 @@
         </div>
       </header>
       
+      <!-- PWA 安装横幅 -->
+      <div v-if="deferredPrompt" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 flex items-center justify-between shadow-md z-40 relative">
+        <span class="text-sm font-medium">✨ 将 Nova System 安装到设备，体验更佳！</span>
+        <button @click="installPWA" class="bg-white text-blue-600 px-4 py-1.5 rounded-full text-sm font-bold shadow-sm hover:scale-105 transition-transform">立即安装</button>
+      </div>
+      
       <!-- 内容区 -->
       <div class="flex-1 p-4 md:p-8">
         <router-view @task-complete="handleTaskComplete" />
@@ -220,7 +192,7 @@
     </main>
     
     <!-- 移动端底部导航 -->
-    <nav class="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t border-gray-200 z-50 flex justify-around items-center pb-2 pt-2 pb-safe">
+    <nav class="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t border-gray-200 z-50 flex justify-around items-center py-3 pb-safe">
       <router-link 
         to="/" 
         class="flex flex-col items-center gap-1 p-2 transition-all"
@@ -254,6 +226,13 @@
         <Calendar class="w-6 h-6" />
         <span class="text-xs font-medium">规划</span>
       </router-link>
+      <button 
+        @click="syncModalVisible = true"
+        class="flex flex-col items-center gap-1 p-2 transition-all text-gray-600 hover:text-blue-600"
+      >
+        <Cloud class="w-6 h-6" />
+        <span class="text-xs font-medium">同步</span>
+      </button>
     </nav>
     
     <!-- 全局任务结算弹窗 -->
@@ -263,14 +242,21 @@
       @close="settleModalVisible = false"
       @confirm="handleSettleConfirm"
     />
+    
+    <!-- 同步中心弹窗 -->
+    <SyncRoomModal 
+      :visible="syncModalVisible" 
+      @close="syncModalVisible = false"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
 import { useSystemStore } from './store'
-import { Clock, Gift, Calendar, Coins, Bell } from 'lucide-vue-next'
+import { Clock, Gift, Calendar, Coins, Bell, Cloud } from 'lucide-vue-next'
 import SettleModal from './components/SettleModal.vue'
+import SyncRoomModal from './components/SyncRoomModal.vue'
 import { requestPermission, notify } from './utils/notifier'
 
 const systemStore = useSystemStore()
@@ -278,6 +264,9 @@ const systemStore = useSystemStore()
 // 结算弹窗状态
 const settleModalVisible = ref(false)
 const selectedTask = ref(null as any)
+
+// 同步中心弹窗状态
+const syncModalVisible = ref(false)
 
 // 通知权限状态
 const notificationPermission = ref('default')
@@ -380,5 +369,7 @@ onMounted(() => {
   systemStore.initStore()
   // 检查通知权限
   checkNotificationPermission()
+  // 初始化同步订阅
+  systemStore.setupRealtimeSubscription()
 })
 </script>

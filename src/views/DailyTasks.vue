@@ -46,12 +46,12 @@
         <!-- 早起习惯 -->
         <div 
           class="flex-shrink-0 w-64 bg-white rounded-2xl shadow-md p-5 cursor-pointer transition-all hover:shadow-lg transform hover:-translate-y-1"
-          :class="{ 'opacity-60': habits.earlyRise.completed }"
-          @click="toggleHabit('earlyRise')"
+          :class="{ 'opacity-60': systemStore.dailyHabits.earlyRise.completed }"
+          @click="systemStore.checkInHabit('earlyRise')"
         >
           <div class="flex items-center justify-between mb-3">
             <h3 class="font-medium text-gray-900">守住 7:00 早起锚点</h3>
-            <div v-if="habits.earlyRise.completed" class="text-green-500 bg-green-50 p-2 rounded-full">
+            <div v-if="systemStore.dailyHabits.earlyRise.completed" class="text-green-500 bg-green-50 p-2 rounded-full">
               <Check class="w-5 h-5" />
             </div>
             <div v-else class="w-10 h-10 border-2 border-slate-200 rounded-full flex items-center justify-center hover:border-blue-400 transition-colors">
@@ -66,12 +66,12 @@
         <!-- 手机物理隔离习惯 -->
         <div 
           class="flex-shrink-0 w-64 bg-white rounded-2xl shadow-md p-5 cursor-pointer transition-all hover:shadow-lg transform hover:-translate-y-1"
-          :class="{ 'opacity-60': habits.phoneIsolation.completed }"
-          @click="toggleHabit('phoneIsolation')"
+          :class="{ 'opacity-60': systemStore.dailyHabits.phoneIsolation.completed }"
+          @click="systemStore.checkInHabit('phoneIsolation')"
         >
           <div class="flex items-center justify-between mb-3">
             <h3 class="font-medium text-gray-900">全天手机物理隔离</h3>
-            <div v-if="habits.phoneIsolation.completed" class="text-green-500 bg-green-50 p-2 rounded-full">
+            <div v-if="systemStore.dailyHabits.phoneIsolation.completed" class="text-green-500 bg-green-50 p-2 rounded-full">
               <Check class="w-5 h-5" />
             </div>
             <div v-else class="w-10 h-10 border-2 border-slate-200 rounded-full flex items-center justify-center hover:border-blue-400 transition-colors">
@@ -238,17 +238,7 @@ const handleResize = () => {
   isPc.value = window.innerWidth >= 768
 }
 
-// 习惯打卡
-const habits = ref({
-  earlyRise: {
-    completed: false,
-    score: 1
-  },
-  phoneIsolation: {
-    completed: false,
-    score: 2
-  }
-})
+
 
 // 日期穿梭器
 const selectedDate = ref(systemStore.currentDate)
@@ -299,15 +289,7 @@ const isExtraUnlocked = computed(() => {
 
 
 
-// 处理习惯打卡
-const toggleHabit = (habitKey: string) => {
-  const habit = habits.value[habitKey as keyof typeof habits.value]
-  if (!habit.completed) {
-    // 标记为完成并增加积分
-    habit.completed = true
-    systemStore.checkInHabit(habit.score)
-  }
-}
+
 
 // 处理任务开始
 const handleStartTask = (taskId: string) => {

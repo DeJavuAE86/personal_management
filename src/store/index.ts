@@ -1,12 +1,18 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick, watch } from 'vue'
 import type { Task, DailyRecord, TaskStatus } from '@/types'
 import { getCurrentSlot, getNextSlot, getTimeToNextSlot, WORKDAY_SCHEDULE, SUNDAY_SCHEDULE } from '@/config/schedule'
 import { notify } from '@/utils/notifier'
+import supabase from '@/utils/supabase'
 
 // 生成唯一ID
 const generateId = (): string => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2)
+}
+
+// 生成同步密钥
+const generateSyncKey = (): string => {
+  return Math.random().toString(36).substring(2, 14)
 }
 
 // 格式化日期为 YYYY-MM-DD
@@ -51,6 +57,23 @@ export const useSystemStore = defineStore('system', () => {
   
   // 当前日期
   const currentDate = ref(formatDate(getNow()))
+  
+  // 每日习惯状态
+  const dailyHabits = ref({
+    earlyRise: { completed: false, score: 1 },
+    phoneIsolation: { completed: false, score: 2 }
+  })
+  
+  // 同步相关状态
+  const syncKey = ref('')
+  const syncStatus = ref<'OFFLINE' | 'SYNCING' | 'CONNECTED'>('OFFLINE')
+  
+  // 防死循环锁
+  let isReceivingCloudUpdate = false
+  // Supabase Channel 实例
+  let syncChannel: any = null
+  // 同步超时计时器
+  let syncTimeout: any = null
   
   // ==================== 计算属性 ====================
   
@@ -216,6 +239,14 @@ export const useSystemStore = defineStore('system', () => {
     if (today !== currentDate.value) {
       currentDate.value = today
       isTodaySettled.value = false
+      // 重置每日习惯状态
+      dailyHabits.value.earlyRise.completed = false
+      dailyHabits.value.phoneIsolation.completed = false
+    }
+    
+    // 如果 syncKey 为空，生成一个新的
+    if (!syncKey.value) {
+      syncKey.value = generateSyncKey()
     }
   }
   
@@ -375,10 +406,14 @@ export const useSystemStore = defineStore('system', () => {
   
   /**
    * 习惯打卡
-   * @param score 习惯对应的分数
+   * @param habitKey 习惯键名
    */
-  const checkInHabit = (score: number) => {
-    totalScore.value += score
+  const checkInHabit = (habitKey: 'earlyRise' | 'phoneIsolation') => {
+    const habit = dailyHabits.value[habitKey]
+    if (!habit.completed) {
+      habit.completed = true
+      totalScore.value += habit.score
+    }
   }
   
   /**
@@ -512,6 +547,167 @@ export const useSystemStore = defineStore('system', () => {
     isWeekendUnlocked.value = true
   }
   
+  /**
+   * 同步本地状态到云端
+   */
+  const syncToCloud = () => {
+    if (isReceivingCloudUpdate || !syncKey.value) return;
+    
+    if (syncTimeout) clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(async () => {
+      syncStatus.value = 'SYNCING';
+      try {
+        const stateData = {
+            totalScore: totalScore.value,
+            allTasks: allTasks.value,
+            historyRecords: historyRecords.value,
+            isWeekendUnlocked: isWeekendUnlocked.value,
+            isTodaySettled: isTodaySettled.value,
+            dailyHabits: dailyHabits.value
+          };
+        const { error } = await supabase.from('app_state').upsert({
+          id: syncKey.value,
+          state_data: stateData,
+          updated_at: new Date().toISOString()
+        });
+        if (!error) syncStatus.value = 'CONNECTED';
+        else {
+          console.error('Sync to cloud failed:', error);
+          syncStatus.value = 'OFFLINE';
+        }
+      } catch (e) {
+        console.error('Sync to cloud error:', e);
+        syncStatus.value = 'OFFLINE';
+      }
+    }, 500);
+  }
+  
+  /**
+   * 设置实时订阅
+   */
+  const setupRealtimeSubscription = () => {
+    // 断开旧的订阅
+    if (syncChannel) {
+      syncChannel.unsubscribe()
+    }
+    
+    // 如果没有 syncKey，不执行订阅
+    if (!syncKey.value) {
+      syncStatus.value = 'OFFLINE'
+      return
+    }
+    
+    // 创建新的订阅
+    syncChannel = supabase.channel('sync-channel')
+    
+    syncChannel
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'app_state',
+        filter: `id=eq.${syncKey.value}`
+      }, async (payload: any) => {
+        // 防止在处理过程中再次触发
+        if (isReceivingCloudUpdate) return;
+        
+        try {
+          isReceivingCloudUpdate = true
+          
+          const newStateData = payload.new?.state_data
+          if (newStateData) {
+            // 更新本地状态
+            totalScore.value = newStateData.totalScore
+            allTasks.value = newStateData.allTasks
+            historyRecords.value = newStateData.historyRecords
+            isWeekendUnlocked.value = newStateData.isWeekendUnlocked
+            isTodaySettled.value = newStateData.isTodaySettled
+            if (newStateData.dailyHabits) {
+              dailyHabits.value = newStateData.dailyHabits
+            }
+          }
+          
+          // 延迟恢复防死循环锁，确保 Vue 响应式更新
+          await nextTick()
+          setTimeout(() => {
+            isReceivingCloudUpdate = false
+          }, 100)
+          
+          syncStatus.value = 'CONNECTED'
+        } catch (error) {
+          console.error('Realtime subscription error:', error)
+          syncStatus.value = 'OFFLINE'
+          isReceivingCloudUpdate = false
+        }
+      })
+      .subscribe((status: string) => {
+        if (status === 'SUBSCRIBED') {
+          syncStatus.value = 'CONNECTED'
+        } else {
+          syncStatus.value = 'OFFLINE'
+        }
+      })
+  }
+  
+  /**
+   * 切换 syncKey 并重新同步
+   * @param newSyncKey 新的 syncKey
+   */
+  const switchSyncKey = async (newSyncKey: string) => {
+    // 断开旧的订阅
+    if (syncChannel) {
+      syncChannel.unsubscribe()
+    }
+    
+    // 更新 syncKey
+    syncKey.value = newSyncKey
+    syncStatus.value = 'SYNCING'
+    
+    try {
+      // 从云端拉取数据
+      const { data, error } = await supabase
+        .from('app_state')
+        .select('state_data')
+        .eq('id', newSyncKey)
+        .single()
+      
+      if (error || !data) {
+        // 如果没有数据，保持本地状态
+        console.warn('No data found for syncKey:', newSyncKey)
+      } else {
+        // 覆盖前必须先上锁，防止死循环
+        isReceivingCloudUpdate = true;
+        
+        // 覆盖本地状态
+        const stateData = data.state_data
+        totalScore.value = stateData.totalScore
+        allTasks.value = stateData.allTasks
+        historyRecords.value = stateData.historyRecords
+        isWeekendUnlocked.value = stateData.isWeekendUnlocked
+        isTodaySettled.value = stateData.isTodaySettled
+        if (stateData.dailyHabits) {
+          dailyHabits.value = stateData.dailyHabits
+        }
+        
+        // 覆盖完成后解锁
+        await nextTick();
+        setTimeout(() => {
+          isReceivingCloudUpdate = false;
+        }, 100);
+      }
+      
+      // 重新设置订阅
+      setupRealtimeSubscription()
+    } catch (error) {
+      console.error('Switch syncKey error:', error)
+      syncStatus.value = 'OFFLINE'
+    }
+  }
+  
+  // 为核心状态添加监听器，自动同步到云端
+  watch([totalScore, allTasks, historyRecords, isWeekendUnlocked, isTodaySettled, dailyHabits], () => {
+    syncToCloud()
+  }, { deep: true })
+  
   // 初始化 Store
   initStore()
   
@@ -525,6 +721,9 @@ export const useSystemStore = defineStore('system', () => {
     isTodaySettled,
     mockDay,
     timeOffset,
+    dailyHabits,
+    syncKey,
+    syncStatus,
     
     // 计算属性
     completedTasksCount,
@@ -554,7 +753,10 @@ export const useSystemStore = defineStore('system', () => {
     endTask,
     updateCurrentTime,
     jumpToDateTime,
-    resetRealTime
+    resetRealTime,
+    syncToCloud,
+    setupRealtimeSubscription,
+    switchSyncKey
   }
 }, {
   // 持久化配置
