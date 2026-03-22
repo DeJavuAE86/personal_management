@@ -124,18 +124,40 @@ export const requestPermission = async (): Promise<boolean> => {
   return false;
 };
 
+
+
+// 封装震动反馈方法
+export const vibrate = (type: 'SUCCESS' | 'WARNING' | 'HEAVY') => {
+  if (!navigator.vibrate) return;
+  
+  switch (type) {
+    case 'SUCCESS':
+      navigator.vibrate([50]);
+      break;
+    case 'WARNING':
+      navigator.vibrate([50, 50, 50]);
+      break;
+    case 'HEAVY':
+      navigator.vibrate([200]);
+      break;
+  }
+};
+
 // 发送通知
 export const notify = (title: string, body: string, soundType: 'CHIME' | 'SUCCESS' | 'WARNING') => {
   // 播放音效
   switch (soundType) {
     case 'CHIME':
       playChime();
+      vibrate('SUCCESS');
       break;
     case 'SUCCESS':
       playSuccess();
+      vibrate('SUCCESS');
       break;
     case 'WARNING':
       playWarning();
+      vibrate('WARNING');
       break;
   }
   
@@ -154,5 +176,6 @@ export default {
   notify,
   playChime,
   playSuccess,
-  playWarning
+  playWarning,
+  vibrate
 };

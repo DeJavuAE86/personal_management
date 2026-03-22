@@ -220,7 +220,7 @@
     </main>
     
     <!-- 移动端底部导航 -->
-    <nav class="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t border-gray-200 z-50 flex justify-around items-center pb-2 pt-2">
+    <nav class="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t border-gray-200 z-50 flex justify-around items-center pb-2 pt-2 pb-safe">
       <router-link 
         to="/" 
         class="flex flex-col items-center gap-1 p-2 transition-all"

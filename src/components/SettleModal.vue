@@ -1,6 +1,8 @@
 <template>
-  <div v-if="visible" class="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-9999">
-    <div class="bg-white rounded-3xl p-6 md:p-8 w-[90%] md:w-full max-w-md mx-4 shadow-2xl transform transition-all">
+  <div v-if="visible" class="fixed inset-0 flex items-end md:items-center justify-center bg-black/50 backdrop-blur-sm z-9999">
+    <div class="w-full max-w-md bg-white rounded-t-3xl md:rounded-3xl p-6 md:p-8 shadow-2xl transform transition-all pb-safe md:mx-4">
+      <!-- 抽屉把手 -->
+      <div class="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-6 md:hidden"></div>
       <!-- 弹窗标题 -->
       <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">任务结算</h3>
       

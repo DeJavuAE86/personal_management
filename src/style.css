@@ -1,1 +1,5 @@
 @import "tailwindcss";
+
+/* 安全区适配 */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.pt-safe { padding-top: env(safe-area-inset-top); }
