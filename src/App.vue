@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex">
+  <div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col md:flex-row">
     <!-- 左侧侧边栏 -->
-    <aside class="w-72 bg-white shadow-lg border-r border-slate-200 flex flex-col">
+    <aside class="w-72 bg-white shadow-lg border-r border-slate-200 flex flex-col hidden md:flex">
       <!-- 顶部 Logo 和名称 -->
       <div class="p-6 border-b border-slate-100">
         <div class="flex items-center gap-3">
@@ -191,9 +191,9 @@
     </aside>
     
     <!-- 右侧主内容区 -->
-    <main class="flex-1 flex flex-col">
+    <main class="flex-1 flex flex-col pb-20 md:pb-0">
       <!-- 顶部 Header -->
-      <header class="bg-white shadow-sm py-4 px-8 flex items-center justify-between sticky top-0 z-10">
+      <header class="bg-white shadow-sm py-4 px-4 md:px-8 flex items-center justify-between sticky top-0 z-10">
         <h2 class="text-2xl font-bold text-gray-900">{{ getPageTitle() }}</h2>
         <div class="flex items-center gap-4">
           <!-- 通知授权按钮 -->
@@ -214,10 +214,47 @@
       </header>
       
       <!-- 内容区 -->
-      <div class="flex-1 p-8">
+      <div class="flex-1 p-4 md:p-8">
         <router-view @task-complete="handleTaskComplete" />
       </div>
     </main>
+    
+    <!-- 移动端底部导航 -->
+    <nav class="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t border-gray-200 z-50 flex justify-around items-center pb-2 pt-2">
+      <router-link 
+        to="/" 
+        class="flex flex-col items-center gap-1 p-2 transition-all"
+        :class="{
+          'text-blue-600': $route.path === '/',
+          'text-gray-600': $route.path !== '/'
+        }"
+      >
+        <Clock class="w-6 h-6" />
+        <span class="text-xs font-medium">打卡</span>
+      </router-link>
+      <router-link 
+        to="/rewards" 
+        class="flex flex-col items-center gap-1 p-2 transition-all"
+        :class="{
+          'text-blue-600': $route.path === '/rewards',
+          'text-gray-600': $route.path !== '/rewards'
+        }"
+      >
+        <Gift class="w-6 h-6" />
+        <span class="text-xs font-medium">兑换</span>
+      </router-link>
+      <router-link 
+        to="/plan" 
+        class="flex flex-col items-center gap-1 p-2 transition-all"
+        :class="{
+          'text-blue-600': $route.path === '/plan',
+          'text-gray-600': $route.path !== '/plan'
+        }"
+      >
+        <Calendar class="w-6 h-6" />
+        <span class="text-xs font-medium">规划</span>
+      </router-link>
+    </nav>
     
     <!-- 全局任务结算弹窗 -->
     <SettleModal 

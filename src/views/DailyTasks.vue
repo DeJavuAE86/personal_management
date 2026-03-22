@@ -142,10 +142,10 @@
         <span class="text-amber-500">🌟</span>
         每日基石
       </h2>
-      <div class="flex gap-4">
+      <div class="flex flex-col md:flex-row gap-4 md:gap-4">
         <!-- 早起习惯 -->
         <div 
-          class="flex-shrink-0 w-64 bg-white rounded-2xl shadow-md p-5 cursor-pointer transition-all hover:shadow-lg transform hover:-translate-y-1"
+          class="flex-shrink-0 w-full md:w-64 bg-white rounded-2xl shadow-md p-5 cursor-pointer transition-all hover:shadow-lg transform hover:-translate-y-1"
           :class="{ 'opacity-60': habits.earlyRise.completed }"
           @click="toggleHabit('earlyRise')"
         >
@@ -165,7 +165,7 @@
         
         <!-- 手机物理隔离习惯 -->
         <div 
-          class="flex-shrink-0 w-64 bg-white rounded-2xl shadow-md p-5 cursor-pointer transition-all hover:shadow-lg transform hover:-translate-y-1"
+          class="flex-shrink-0 w-full md:w-64 bg-white rounded-2xl shadow-md p-5 cursor-pointer transition-all hover:shadow-lg transform hover:-translate-y-1"
           :class="{ 'opacity-60': habits.phoneIsolation.completed }"
           @click="toggleHabit('phoneIsolation')"
         >
@@ -191,7 +191,7 @@
         <div class="w-3 h-3 bg-rose-500 rounded-full"></div>
         <h2 class="text-xl font-semibold text-gray-900">🚨 保底防线</h2>
       </div>
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TaskCard 
           v-for="task in minTasks" 
           :key="task.id" 
@@ -214,7 +214,7 @@
         <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
         <h2 class="text-xl font-semibold text-gray-900">🎯 核心目标</h2>
       </div>
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TaskCard 
           v-for="task in standardTasks" 
           :key="task.id" 
@@ -244,7 +244,7 @@
         <p class="text-gray-600 font-medium">🔒 完成所有标准任务后解锁超频模式</p>
       </div>
       
-      <div v-else class="grid grid-cols-2 gap-4">
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TaskCard 
           v-for="task in extraTasks" 
           :key="task.id" 

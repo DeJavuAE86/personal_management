@@ -1,6 +1,6 @@
 <template>
   <div v-if="visible" class="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-9999">
-    <div class="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl transform transition-all">
+    <div class="bg-white rounded-3xl p-6 md:p-8 w-[90%] md:w-full max-w-md mx-4 shadow-2xl transform transition-all">
       <!-- 弹窗标题 -->
       <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">任务结算</h3>
       
