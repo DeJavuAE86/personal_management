@@ -4,8 +4,8 @@
     <div 
       class="rounded-3xl shadow-xl overflow-hidden transition-all duration-500 ease-in-out"
       :class="{
-        'h-48': !isTaskInProgress && currentSlot?.type !== 'OPTIONAL' && currentSlot?.type !== 'REVIEW' && currentSlot?.type !== 'REWARD',
-        'h-64': isTaskInProgress || (currentSlot?.type === 'OPTIONAL') || (currentSlot?.type === 'REVIEW') || (currentSlot?.type === 'REWARD'),
+        'h-40 md:h-48': !isTaskInProgress && currentSlot?.type !== 'OPTIONAL' && currentSlot?.type !== 'REVIEW' && currentSlot?.type !== 'REWARD',
+        'h-48 md:h-64': isTaskInProgress || (currentSlot?.type === 'OPTIONAL') || (currentSlot?.type === 'REVIEW') || (currentSlot?.type === 'REWARD'),
         'bg-gradient-to-br from-blue-900 to-indigo-900': isTaskInProgress,
         'bg-gradient-to-br from-blue-500 to-indigo-600': !isTaskInProgress && currentSlot?.type === 'CORE',
         'bg-gradient-to-br from-green-500 to-emerald-600': !isTaskInProgress && currentSlot?.type === 'REST',
@@ -18,37 +18,37 @@
       }"
     >
       <!-- 任务专注模式 -->
-      <div v-if="isTaskInProgress" class="h-full flex flex-col items-center justify-center text-white p-6">
-        <h2 class="text-2xl font-bold mb-2 text-center">{{ currentTask?.title }}</h2>
-        <div class="text-4xl font-mono font-bold mb-6 animate-pulse">{{ formattedTime }}</div>
+      <div v-if="isTaskInProgress" class="h-full flex flex-col items-center justify-center text-white p-4 md:p-6">
+        <h2 class="text-lg md:text-2xl font-bold mb-2 text-center">{{ currentTask?.title }}</h2>
+        <div class="text-3xl md:text-4xl font-mono font-bold mb-4 md:mb-6 animate-pulse">{{ formattedTime }}</div>
         <button 
           @click="handleEndTask(currentTask?.id)"
-          class="bg-white text-blue-900 px-6 py-3 rounded-full font-bold hover:bg-blue-50 transition-colors shadow-md"
+          class="bg-white text-blue-900 px-4 md:px-6 py-2 md:py-3 rounded-full font-bold hover:bg-blue-50 transition-colors shadow-md text-sm md:text-base"
         >
           ⏹ 结束专注并结算
         </button>
       </div>
       
       <!-- 作息巡航模式 -->
-      <div v-else class="h-full flex flex-col justify-center p-8 text-white">
-        <div class="text-4xl font-bold mb-2">{{ currentTimeString }}</div>
+      <div v-else class="h-full flex flex-col justify-center p-4 md:p-8 text-white">
+        <div class="text-3xl md:text-4xl font-bold mb-2">{{ currentTimeString }}</div>
         
         <!-- 周六未复盘状态 -->
         <div v-if="currentSlot?.type === 'REVIEW'">
-          <h2 class="text-2xl font-bold mb-4">🔥 当前状态：{{ currentSlot.name }}</h2>
-          <div class="text-lg mb-6 opacity-90">👉 自由清算中，去周末规划页写复盘解锁狂欢！</div>
+          <h2 class="text-lg md:text-2xl font-bold mb-3 md:mb-4">🔥 当前状态：{{ currentSlot.name }}</h2>
+          <div class="text-sm md:text-lg mb-4 md:mb-6 opacity-90">👉 自由清算中，去周末规划页写复盘解锁狂欢！</div>
         </div>
         
         <!-- 周六已解锁状态 -->
         <div v-else-if="currentSlot?.type === 'REWARD'">
-          <h2 class="text-2xl font-bold mb-4">🔥 当前状态：{{ currentSlot.name }}</h2>
-          <div class="text-lg mb-6 opacity-90">👉 周末狂欢已开启，尽情去兑换大厅享受吧！</div>
+          <h2 class="text-lg md:text-2xl font-bold mb-3 md:mb-4">🔥 当前状态：{{ currentSlot.name }}</h2>
+          <div class="text-sm md:text-lg mb-4 md:mb-6 opacity-90">👉 周末狂欢已开启，尽情去兑换大厅享受吧！</div>
         </div>
         
         <!-- 普通时段 -->
         <div v-else>
-          <h2 class="text-2xl font-bold mb-4">🔥 当前状态：{{ currentSlot?.name }} ({{ currentSlot?.startTime }} - {{ currentSlot?.endTime }})</h2>
-          <div v-if="nextSlot" class="text-lg opacity-90">
+          <h2 class="text-lg md:text-2xl font-bold mb-3 md:mb-4">🔥 当前状态：{{ currentSlot?.name }} ({{ currentSlot?.startTime }} - {{ currentSlot?.endTime }})</h2>
+          <div v-if="nextSlot" class="text-sm md:text-lg opacity-90">
             👉 预告：距离【{{ nextSlot.name }}】还有 {{ formatTimeToNextSlot(timeToNextSlot) }}
           </div>
         </div>
