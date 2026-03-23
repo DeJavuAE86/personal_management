@@ -156,7 +156,7 @@
       </div>
       
       <!-- 时空模拟器 -->
-      <div class="p-4 border-t border-slate-100 flex justify-center gap-2">
+      <div v-if="isDev" class="p-4 border-t border-slate-100 flex justify-center gap-2">
         <button 
           class="text-xs px-2 py-1 rounded-md transition-all"
           :class="{
@@ -282,6 +282,62 @@
       :visible="syncModalVisible" 
       @close="syncModalVisible = false"
     />
+    
+    <!-- 时空穿梭机按钮 -->
+    <button 
+      v-if="isDev"
+      @click="travelModalVisible = true"
+      class="fixed bottom-20 right-6 md:bottom-8 md:right-8 w-14 h-14 bg-gradient-to-r from-purple-600 to-blue-500 rounded-full shadow-lg flex items-center justify-center text-white hover:shadow-xl transition-all transform hover:scale-110 z-50"
+    >
+      <Clock class="w-6 h-6" />
+    </button>
+    
+    <!-- 时空穿梭机模态框 -->
+    <div v-if="travelModalVisible && isDev" class="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-9999" @click.self="travelModalVisible = false">
+      <div class="w-full max-w-md bg-white rounded-2xl p-6 shadow-2xl">
+        <h3 class="text-xl font-bold text-gray-900 mb-4 text-center">时空穿梭机</h3>
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">日期</label>
+              <input 
+                type="date" 
+                v-model="travelDate"
+                class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">时间</label>
+              <input 
+                type="time" 
+                v-model="travelTime"
+                class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <button 
+              class="flex-1 bg-blue-500 text-white px-4 py-3 rounded-lg hover:bg-blue-600 transition-all font-medium"
+              @click="handleTravel"
+            >
+              🚀 穿越
+            </button>
+            <button 
+              class="flex-1 bg-gray-200 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-300 transition-all font-medium"
+              @click="handleResetTime"
+            >
+              🌍 重置
+            </button>
+          </div>
+          <button 
+            class="w-full bg-slate-100 text-gray-800 px-4 py-3 rounded-lg hover:bg-slate-200 transition-all font-medium"
+            @click="travelModalVisible = false"
+          >
+            关闭
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -292,6 +348,9 @@ import { Clock, Gift, Calendar, Coins, Bell, Cloud } from 'lucide-vue-next'
 import SettleModal from './components/SettleModal.vue'
 import SyncRoomModal from './components/SyncRoomModal.vue'
 import { requestPermission, notify } from './utils/notifier'
+
+// 直接读取 Vite 的内置环境变量
+const isDev = import.meta.env.DEV;
 
 const systemStore = useSystemStore()
 
@@ -304,6 +363,29 @@ const syncModalVisible = ref(false)
 
 // 通知权限状态
 const notificationPermission = ref('default')
+
+// 时空穿梭机状态
+const travelModalVisible = ref(false)
+const travelDate = ref(new Date().toISOString().split('T')[0])
+const travelTime = ref(new Date().toTimeString().split(' ')[0].substring(0, 5))
+
+// 处理时空穿梭
+const handleTravel = () => {
+  if (travelDate.value && travelTime.value) {
+    systemStore.jumpToDateTime(travelDate.value, travelTime.value)
+    notify('🚀 穿越成功', `已穿越到 ${travelDate.value} ${travelTime.value}`, 'SUCCESS')
+    travelModalVisible.value = false
+  }
+}
+
+// 重置为真实时间
+const handleResetTime = () => {
+  systemStore.resetRealTime()
+  travelDate.value = new Date().toISOString().split('T')[0]
+  travelTime.value = new Date().toTimeString().split(' ')[0].substring(0, 5)
+  notify('🌍 时间重置', '已恢复到真实时间', 'SUCCESS')
+  travelModalVisible.value = false
+}
 
 // 检查通知权限
 const checkNotificationPermission = () => {
