@@ -154,6 +154,40 @@
           ☁️ 同步中心
         </button>
       </div>
+      
+      <!-- 时空模拟器 -->
+      <div class="p-4 border-t border-slate-100 flex justify-center gap-2">
+        <button 
+          class="text-xs px-2 py-1 rounded-md transition-all"
+          :class="{
+            'bg-blue-100 text-blue-800': systemStore.mockDay === 'REAL',
+            'bg-gray-100 text-gray-600 hover:bg-gray-200': systemStore.mockDay !== 'REAL'
+          }"
+          @click="systemStore.mockDay = 'REAL'"
+        >
+          [真实时间]
+        </button>
+        <button 
+          class="text-xs px-2 py-1 rounded-md transition-all"
+          :class="{
+            'bg-blue-100 text-blue-800': systemStore.mockDay === 'SATURDAY',
+            'bg-gray-100 text-gray-600 hover:bg-gray-200': systemStore.mockDay !== 'SATURDAY'
+          }"
+          @click="systemStore.mockDay = 'SATURDAY'"
+        >
+          [测周六]
+        </button>
+        <button 
+          class="text-xs px-2 py-1 rounded-md transition-all"
+          :class="{
+            'bg-blue-100 text-blue-800': systemStore.mockDay === 'SUNDAY',
+            'bg-gray-100 text-gray-600 hover:bg-gray-200': systemStore.mockDay !== 'SUNDAY'
+          }"
+          @click="systemStore.mockDay = 'SUNDAY'"
+        >
+          [测周日]
+        </button>
+      </div>
     </aside>
     
     <!-- 右侧主内容区 -->
