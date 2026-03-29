@@ -480,12 +480,17 @@ watch(
   { immediate: true }
 )
 
-onMounted(() => {
-  // 初始化 Store
+onMounted(async () => {
+  // 1. 初始化 Store（生成或读取本地 syncKey 等）
   systemStore.initStore()
-  // 检查通知权限
+
+  // 2. 检查通知权限
   checkNotificationPermission()
-  // 初始化同步订阅
+
+  // 3. 主动向云端索要最新数据（对齐世界线）
+  await systemStore.pullInitialData()
+
+  // 4. 初始化同步订阅（监听未来的变化）
   systemStore.setupRealtimeSubscription()
 })
 </script>

@@ -583,6 +583,52 @@ export const useSystemStore = defineStore('system', () => {
   }
   
   /**
+   * 启动时从云端拉取最新数据（Init Pull）
+   */
+  const pullInitialData = async () => {
+    if (!syncKey.value) return;
+
+    syncStatus.value = 'SYNCING';
+    try {
+      const { data, error } = await supabase
+        .from('app_state')
+        .select('state_data')
+        .eq('id', syncKey.value)
+        .single();
+
+      if (error || !data) {
+        console.warn('Init pull: No cloud data found, using local state.');
+        syncStatus.value = 'OFFLINE';
+        return;
+      }
+
+      // 核心防线：上锁，防止触发本地 Watch 导致回传覆盖云端
+      isReceivingCloudUpdate = true;
+
+      const stateData = data.state_data;
+      totalScore.value = stateData.totalScore;
+      allTasks.value = stateData.allTasks;
+      historyRecords.value = stateData.historyRecords;
+      isWeekendUnlocked.value = stateData.isWeekendUnlocked;
+      isTodaySettled.value = stateData.isTodaySettled;
+      if (stateData.dailyHabits) {
+        dailyHabits.value = stateData.dailyHabits;
+      }
+
+      // 延迟解锁，确保 Vue 响应式队列已清空
+      await nextTick();
+      setTimeout(() => {
+        isReceivingCloudUpdate = false;
+        syncStatus.value = 'CONNECTED';
+      }, 100);
+
+    } catch (error) {
+      console.error('Pull initial data error:', error);
+      syncStatus.value = 'OFFLINE';
+    }
+  };
+
+  /**
    * 设置实时订阅
    */
   const setupRealtimeSubscription = () => {
@@ -756,7 +802,8 @@ export const useSystemStore = defineStore('system', () => {
     resetRealTime,
     syncToCloud,
     setupRealtimeSubscription,
-    switchSyncKey
+    switchSyncKey,
+    pullInitialData
   }
 }, {
   // 持久化配置
