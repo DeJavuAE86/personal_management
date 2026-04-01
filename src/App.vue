@@ -420,9 +420,9 @@ const handleSettleConfirm = (data: { taskId: string; timeSpent: number; actualPe
   selectedTask.value = null
 }
 
-// 获取问候语
+// 获取问候语 (接入时空引擎)
 const getGreeting = () => {
-  const hour = new Date().getHours()
+  const hour = systemStore.getNow().getHours() // 修复：听从时空穿梭机指挥
   if (hour < 12) return '早上好！'
   if (hour < 18) return '下午好！'
   return '晚上好！'
@@ -454,9 +454,9 @@ const installPWA = async () => {
   }
 }
 
-// 判断是否为当前时间区间
+// 判断是否为当前时间区间 (接入时空引擎)
 const isCurrentTimeSlot = (time: string) => {
-  const currentHour = new Date().getHours()
+  const currentHour = systemStore.getNow().getHours() // 修复：听从时空穿梭机指挥
   const slotHour = parseInt(time.split(':')[0])
   
   // 简单判断：当前小时是否与时间槽小时匹配
