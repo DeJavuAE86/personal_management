@@ -558,6 +558,7 @@ export const useSystemStore = defineStore('system', () => {
       syncStatus.value = 'SYNCING';
       try {
         const stateData = {
+            currentDate: currentDate.value, // 核心新增：加入时间戳锚点
             totalScore: totalScore.value,
             allTasks: allTasks.value,
             historyRecords: historyRecords.value,
@@ -606,13 +607,23 @@ export const useSystemStore = defineStore('system', () => {
       isReceivingCloudUpdate = true;
 
       const stateData = data.state_data;
+
+      // 1. 全局持久化数据，无论哪天的都无条件接收
       totalScore.value = stateData.totalScore;
       allTasks.value = stateData.allTasks;
       historyRecords.value = stateData.historyRecords;
       isWeekendUnlocked.value = stateData.isWeekendUnlocked;
-      isTodaySettled.value = stateData.isTodaySettled;
-      if (stateData.dailyHabits) {
-        dailyHabits.value = stateData.dailyHabits;
+
+      // 2. 核心防线：只有当云端数据的日期也是今天时，才接收每日状态！
+      if (stateData.currentDate === currentDate.value) {
+        isTodaySettled.value = stateData.isTodaySettled;
+        if (stateData.dailyHabits) {
+          dailyHabits.value = stateData.dailyHabits;
+        }
+      } else {
+        // 如果云端是旧数据（跨天了），保留本地由 initStore 重置的全新状态（false）
+        // 并主动触发一次上传，用本地的新状态把云端的旧数据洗掉
+        setTimeout(() => syncToCloud(), 1000);
       }
 
       // 延迟解锁，确保 Vue 响应式队列已清空
@@ -661,14 +672,22 @@ export const useSystemStore = defineStore('system', () => {
           
           const newStateData = payload.new?.state_data
           if (newStateData) {
-            // 更新本地状态
+            // 1. 全局持久化数据，无论哪天的都无条件接收
             totalScore.value = newStateData.totalScore
             allTasks.value = newStateData.allTasks
             historyRecords.value = newStateData.historyRecords
             isWeekendUnlocked.value = newStateData.isWeekendUnlocked
-            isTodaySettled.value = newStateData.isTodaySettled
-            if (newStateData.dailyHabits) {
-              dailyHabits.value = newStateData.dailyHabits
+
+            // 2. 核心防线：只有当云端数据的日期也是今天时，才接收每日状态！
+            if (newStateData.currentDate === currentDate.value) {
+              isTodaySettled.value = newStateData.isTodaySettled
+              if (newStateData.dailyHabits) {
+                dailyHabits.value = newStateData.dailyHabits
+              }
+            } else {
+              // 如果云端是旧数据（跨天了），保留本地由 initStore 重置的全新状态（false）
+              // 并主动触发一次上传，用本地的新状态把云端的旧数据洗掉
+              setTimeout(() => syncToCloud(), 1000)
             }
           }
           
@@ -725,13 +744,23 @@ export const useSystemStore = defineStore('system', () => {
         
         // 覆盖本地状态
         const stateData = data.state_data
+
+        // 1. 全局持久化数据，无论哪天的都无条件接收
         totalScore.value = stateData.totalScore
         allTasks.value = stateData.allTasks
         historyRecords.value = stateData.historyRecords
         isWeekendUnlocked.value = stateData.isWeekendUnlocked
-        isTodaySettled.value = stateData.isTodaySettled
-        if (stateData.dailyHabits) {
-          dailyHabits.value = stateData.dailyHabits
+
+        // 2. 核心防线：只有当云端数据的日期也是今天时，才接收每日状态！
+        if (stateData.currentDate === currentDate.value) {
+          isTodaySettled.value = stateData.isTodaySettled
+          if (stateData.dailyHabits) {
+            dailyHabits.value = stateData.dailyHabits
+          }
+        } else {
+          // 如果云端是旧数据（跨天了），保留本地由 initStore 重置的全新状态（false）
+          // 并主动触发一次上传，用本地的新状态把云端的旧数据洗掉
+          setTimeout(() => syncToCloud(), 1000)
         }
         
         // 覆盖完成后解锁
