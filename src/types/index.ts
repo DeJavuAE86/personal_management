@@ -42,6 +42,10 @@ export interface Task {
   
   // 任务绩效分设置
   perfSettings: TaskPerfSettings;
+  
+  // 新增字段
+  isPenaltyDeducted?: boolean; // 标记是否扣除了违约金
+  createdDate?: string; // 任务创建日期，YYYY-MM-DD
 }
 
 // 3. 每日记录实体 (存入历史账本)

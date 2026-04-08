@@ -252,15 +252,18 @@ export const useSystemStore = defineStore('system', () => {
   
   /**
    * 添加任务
-   * @param task 任务信息（不包含 id、status、actualPerfScore、completedAt、pauseCount、accumulatedTime、lastStartTime）
+   * @param task 任务信息（不包含 id、status、actualPerfScore、completedAt、pauseCount、accumulatedTime、lastStartTime、isPenaltyDeducted、createdDate）
+   * @param isPenaltyDeducted 是否扣除了违约金
    */
-  const addTask = (task: Omit<Task, 'id' | 'status' | 'actualPerfScore' | 'completedAt' | 'pauseCount' | 'accumulatedTime' | 'lastStartTime'>) => {
+  const addTask = (task: Omit<Task, 'id' | 'status' | 'actualPerfScore' | 'completedAt' | 'pauseCount' | 'accumulatedTime' | 'lastStartTime' | 'isPenaltyDeducted' | 'createdDate'>, isPenaltyDeducted: boolean = false) => {
     const newTask: Task = {
       id: generateId(),
       status: 'TODO',
       actualPerfScore: 0,
       pauseCount: 0,
       accumulatedTime: 0,
+      isPenaltyDeducted, // 记录是否扣除了违约金
+      createdDate: currentDate.value, // 记录任务创建日期
       ...task
     }
     
@@ -421,19 +424,29 @@ export const useSystemStore = defineStore('system', () => {
    * @param taskId 任务ID
    */
   const removeTask = (taskId: string) => {
-    const taskIndex = allTasks.value.findIndex(task => task.id === taskId)
-    
-    if (taskIndex !== -1) {
-      const task = allTasks.value[taskIndex]
+    try {
+      const taskIndex = allTasks.value.findIndex(task => task.id === taskId)
       
-      // 如果任务已完成，需要从总积分中扣除
-      if (task.status === 'DONE') {
-        const earnedScore = task.baseScore + task.actualPerfScore
-        totalScore.value -= earnedScore
+      if (taskIndex !== -1) {
+        const task = allTasks.value[taskIndex]
+        
+        // 确保只删除待执行任务
+        if (task.status === 'DONE' || task.status === 'VOID') {
+          notify('⚠️ 无法删除', '只能删除待执行任务！', 'WARNING')
+          return
+        }
+        
+        // 恢复扣除的违约金（如果有）
+        if (task.isPenaltyDeducted) {
+          totalScore.value += 2
+        }
+        
+        // 从任务列表中删除
+        allTasks.value.splice(taskIndex, 1)
       }
-      
-      // 从任务列表中删除
-      allTasks.value.splice(taskIndex, 1)
+    } catch (error) {
+      console.error('删除任务失败:', error)
+      notify('❌ 删除失败', '任务删除失败，请稍后重试', 'WARNING')
     }
   }
   
@@ -835,9 +848,21 @@ export const useSystemStore = defineStore('system', () => {
     pullInitialData
   }
 }, {
-  // 持久化配置
+  // 持久化配置（排除 deletedTask，避免刷新页面后出现幽灵 Toast）
   persist: {
     storage: localStorage,
-    key: 'personal-management-system'
+    key: 'personal-management-system',
+    pick: [
+      'totalScore',
+      'allTasks',
+      'historyRecords',
+      'isWeekendUnlocked',
+      'isTodaySettled',
+      'currentDate',
+      'dailyHabits',
+      'syncKey',
+      'mockDay',
+      'timeOffset'
+    ]
   }
 })

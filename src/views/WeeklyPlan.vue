@@ -328,7 +328,6 @@
                 </div>
               </div>
               <button 
-                v-if="!isWorkday"
                 class="p-2 text-red-600 hover:bg-red-100 rounded-full transition-all"
                 @click="handleDeleteTask(task.id)"
                 title="删除任务"
@@ -498,6 +497,7 @@ const handleSubmitTask = () => {
   }
   
   // 工作日违约金惩罚
+  let isPenaltyDeducted = false
   if (isWorkday.value) {
     if (systemStore.totalScore < 2) {
       alert('余额不足，禁止发布任务！')
@@ -505,6 +505,7 @@ const handleSubmitTask = () => {
     }
     // 扣除违约金
     systemStore.totalScore -= 2
+    isPenaltyDeducted = true
     // 播放警告音效
     playWarning()
   }
@@ -519,7 +520,7 @@ const handleSubmitTask = () => {
     plannedDate: taskForm.value.plannedDate,
     // 传递任务绩效分设置
     perfSettings: taskForm.value.perfSettings
-  })
+  }, isPenaltyDeducted)
   
   // 清空表单
   taskForm.value = {
@@ -558,18 +559,35 @@ const handleSubmitTask = () => {
 
 // 处理任务删除
 const handleDeleteTask = (taskId: string) => {
-  if (isWorkday.value) {
-    alert('战时死锁：工作日执行期已开启，所有历史任务禁止删除、禁止篡改！')
-    return
-  }
-  
-  if (confirm('确定要删除这个任务吗？')) {
-    systemStore.removeTask(taskId)
-    successMessage.value = '任务删除成功！'
-    showSuccessToast.value = true
-    setTimeout(() => {
-      showSuccessToast.value = false
-    }, 3000)
+  try {
+    const task = systemStore.allTasks.find(t => t.id === taskId)
+    if (!task) return
+    
+    // 检查是否为待执行任务
+    if (task.status === 'DONE' || task.status === 'VOID') {
+      alert('只能删除待执行任务！')
+      return
+    }
+    
+    // 执行日删除规则：只能删除当天添加的任务
+    if (isWorkday.value) {
+      if (task.createdDate !== systemStore.currentDate) {
+        alert('执行日只能删除当天添加的任务！')
+        return
+      }
+    }
+    
+    if (confirm('确定要删除这个任务吗？删除后无法恢复！')) {
+      systemStore.removeTask(taskId)
+      successMessage.value = '任务删除成功！'
+      showSuccessToast.value = true
+      setTimeout(() => {
+        showSuccessToast.value = false
+      }, 3000)
+    }
+  } catch (error) {
+    console.error('删除任务失败:', error)
+    alert('删除任务失败，请稍后重试')
   }
 }
 
