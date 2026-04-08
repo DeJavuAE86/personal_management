@@ -224,8 +224,16 @@
             </select>
           </div>
           
+          <!-- 工作日免费次数提示 -->
+          <div v-if="isWorkday" class="bg-green-100 border border-green-400 rounded-xl p-4 mb-4">
+            <div class="flex items-center gap-2 text-green-600 font-medium">
+              <span>🎁</span>
+              <span>每日免费次数：{{ systemStore.dailyFreeTaskAdditions }}/2 次</span>
+            </div>
+          </div>
+          
           <!-- 工作日违约金警告 -->
-          <div v-if="isWorkday" class="bg-red-100 border border-red-400 rounded-xl p-4 mb-4">
+          <div v-if="isWorkday && systemStore.dailyFreeTaskAdditions <= 0" class="bg-red-100 border border-red-400 rounded-xl p-4 mb-4">
             <div class="flex items-center gap-2 text-red-600 font-medium">
               <span>🚨</span>
               <span>违约警告：工作日临时追加计划，每次发布将扣除 2 分违约金！</span>
@@ -498,16 +506,24 @@ const handleSubmitTask = () => {
   
   // 工作日违约金惩罚
   let isPenaltyDeducted = false
+  let isUsingFreeAddition = false
+  
   if (isWorkday.value) {
-    if (systemStore.totalScore < 2) {
-      alert('余额不足，禁止发布任务！')
-      return
+    // 优先使用免费次数
+    if (systemStore.dailyFreeTaskAdditions > 0) {
+      isUsingFreeAddition = true
+    } else {
+      // 免费次数不足，扣除违约金
+      if (systemStore.totalScore < 2) {
+        alert('余额不足，禁止发布任务！')
+        return
+      }
+      // 扣除违约金
+      systemStore.totalScore -= 2
+      isPenaltyDeducted = true
+      // 播放警告音效
+      playWarning()
     }
-    // 扣除违约金
-    systemStore.totalScore -= 2
-    isPenaltyDeducted = true
-    // 播放警告音效
-    playWarning()
   }
   
   // 添加任务
@@ -520,7 +536,7 @@ const handleSubmitTask = () => {
     plannedDate: taskForm.value.plannedDate,
     // 传递任务绩效分设置
     perfSettings: taskForm.value.perfSettings
-  }, isPenaltyDeducted)
+  }, isPenaltyDeducted, isUsingFreeAddition)
   
   // 清空表单
   taskForm.value = {
@@ -548,7 +564,15 @@ const handleSubmitTask = () => {
   }
   
   // 显示成功提示
-  successMessage.value = isWorkday.value ? '任务发布成功！已扣除 2 分违约金' : '任务发布成功！'
+  if (isWorkday.value) {
+    if (isUsingFreeAddition) {
+      successMessage.value = '任务发布成功！使用了 1 次免费添加机会'
+    } else {
+      successMessage.value = '任务发布成功！已扣除 2 分违约金'
+    }
+  } else {
+    successMessage.value = '任务发布成功！'
+  }
   showSuccessToast.value = true
   
   // 3秒后隐藏提示

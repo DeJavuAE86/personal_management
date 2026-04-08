@@ -68,6 +68,10 @@ export const useSystemStore = defineStore('system', () => {
   const syncKey = ref('')
   const syncStatus = ref<'OFFLINE' | 'SYNCING' | 'CONNECTED'>('OFFLINE')
   
+  // 免费添加任务相关状态
+  const dailyFreeTaskAdditions = ref(2) // 每天2次免费添加任务的机会
+  const lastFreeTaskResetDate = ref(formatDate(getNow())) // 上次重置免费次数的日期
+  
   // 防死循环锁
   let isReceivingCloudUpdate = false
   // Supabase Channel 实例
@@ -244,6 +248,12 @@ export const useSystemStore = defineStore('system', () => {
       dailyHabits.value.phoneIsolation.completed = false
     }
     
+    // 重置免费添加任务次数（每天重置）
+    if (today !== lastFreeTaskResetDate.value) {
+      dailyFreeTaskAdditions.value = 2
+      lastFreeTaskResetDate.value = today
+    }
+    
     // 如果 syncKey 为空，生成一个新的
     if (!syncKey.value) {
       syncKey.value = generateSyncKey()
@@ -252,10 +262,16 @@ export const useSystemStore = defineStore('system', () => {
   
   /**
    * 添加任务
-   * @param task 任务信息（不包含 id、status、actualPerfScore、completedAt、pauseCount、accumulatedTime、lastStartTime、isPenaltyDeducted、createdDate）
+   * @param task 任务信息（不包含 id、status、actualPerfScore、completedAt、pauseCount、accumulatedTime、lastStartTime、isPenaltyDeducted、createdDate、isUsingFreeAddition）
    * @param isPenaltyDeducted 是否扣除了违约金
+   * @param isUsingFreeAddition 是否使用了免费添加次数
    */
-  const addTask = (task: Omit<Task, 'id' | 'status' | 'actualPerfScore' | 'completedAt' | 'pauseCount' | 'accumulatedTime' | 'lastStartTime' | 'isPenaltyDeducted' | 'createdDate'>, isPenaltyDeducted: boolean = false) => {
+  const addTask = (task: Omit<Task, 'id' | 'status' | 'actualPerfScore' | 'completedAt' | 'pauseCount' | 'accumulatedTime' | 'lastStartTime' | 'isPenaltyDeducted' | 'createdDate' | 'isUsingFreeAddition'>, isPenaltyDeducted: boolean = false, isUsingFreeAddition: boolean = false) => {
+    // 如果使用了免费添加次数，减少免费次数
+    if (isUsingFreeAddition) {
+      dailyFreeTaskAdditions.value--
+    }
+    
     const newTask: Task = {
       id: generateId(),
       status: 'TODO',
@@ -263,6 +279,7 @@ export const useSystemStore = defineStore('system', () => {
       pauseCount: 0,
       accumulatedTime: 0,
       isPenaltyDeducted, // 记录是否扣除了违约金
+      isUsingFreeAddition, // 记录是否使用了免费添加次数
       createdDate: currentDate.value, // 记录任务创建日期
       ...task
     }
@@ -441,6 +458,11 @@ export const useSystemStore = defineStore('system', () => {
           totalScore.value += 2
         }
         
+        // 恢复免费添加次数（如果使用了）
+        if (task.isUsingFreeAddition) {
+          dailyFreeTaskAdditions.value++
+        }
+        
         // 从任务列表中删除
         allTasks.value.splice(taskIndex, 1)
       }
@@ -577,7 +599,9 @@ export const useSystemStore = defineStore('system', () => {
             historyRecords: historyRecords.value,
             isWeekendUnlocked: isWeekendUnlocked.value,
             isTodaySettled: isTodaySettled.value,
-            dailyHabits: dailyHabits.value
+            dailyHabits: dailyHabits.value,
+            dailyFreeTaskAdditions: dailyFreeTaskAdditions.value,
+            lastFreeTaskResetDate: lastFreeTaskResetDate.value
           };
         const { error } = await supabase.from('app_state').upsert({
           id: syncKey.value,
@@ -622,18 +646,24 @@ export const useSystemStore = defineStore('system', () => {
       const stateData = data.state_data;
 
       // 1. 全局持久化数据，无论哪天的都无条件接收
-      totalScore.value = stateData.totalScore;
-      allTasks.value = stateData.allTasks;
-      historyRecords.value = stateData.historyRecords;
-      isWeekendUnlocked.value = stateData.isWeekendUnlocked;
+    totalScore.value = stateData.totalScore;
+    allTasks.value = stateData.allTasks;
+    historyRecords.value = stateData.historyRecords;
+    isWeekendUnlocked.value = stateData.isWeekendUnlocked;
 
-      // 2. 核心防线：只有当云端数据的日期也是今天时，才接收每日状态！
-      if (stateData.currentDate === currentDate.value) {
-        isTodaySettled.value = stateData.isTodaySettled;
-        if (stateData.dailyHabits) {
-          dailyHabits.value = stateData.dailyHabits;
-        }
-      } else {
+    // 2. 核心防线：只有当云端数据的日期也是今天时，才接收每日状态！
+    if (stateData.currentDate === currentDate.value) {
+      isTodaySettled.value = stateData.isTodaySettled;
+      if (stateData.dailyHabits) {
+        dailyHabits.value = stateData.dailyHabits;
+      }
+      if (stateData.dailyFreeTaskAdditions !== undefined) {
+        dailyFreeTaskAdditions.value = stateData.dailyFreeTaskAdditions;
+      }
+      if (stateData.lastFreeTaskResetDate) {
+        lastFreeTaskResetDate.value = stateData.lastFreeTaskResetDate;
+      }
+    } else {
         // 如果云端是旧数据（跨天了），保留本地由 initStore 重置的全新状态（false）
         // 并主动触发一次上传，用本地的新状态把云端的旧数据洗掉
         setTimeout(() => syncToCloud(), 1000);
@@ -696,6 +726,12 @@ export const useSystemStore = defineStore('system', () => {
               isTodaySettled.value = newStateData.isTodaySettled
               if (newStateData.dailyHabits) {
                 dailyHabits.value = newStateData.dailyHabits
+              }
+              if (newStateData.dailyFreeTaskAdditions !== undefined) {
+                dailyFreeTaskAdditions.value = newStateData.dailyFreeTaskAdditions
+              }
+              if (newStateData.lastFreeTaskResetDate) {
+                lastFreeTaskResetDate.value = newStateData.lastFreeTaskResetDate
               }
             } else {
               // 如果云端是旧数据（跨天了），保留本地由 initStore 重置的全新状态（false）
@@ -770,6 +806,12 @@ export const useSystemStore = defineStore('system', () => {
           if (stateData.dailyHabits) {
             dailyHabits.value = stateData.dailyHabits
           }
+          if (stateData.dailyFreeTaskAdditions !== undefined) {
+            dailyFreeTaskAdditions.value = stateData.dailyFreeTaskAdditions
+          }
+          if (stateData.lastFreeTaskResetDate) {
+            lastFreeTaskResetDate.value = stateData.lastFreeTaskResetDate
+          }
         } else {
           // 如果云端是旧数据（跨天了），保留本地由 initStore 重置的全新状态（false）
           // 并主动触发一次上传，用本地的新状态把云端的旧数据洗掉
@@ -812,6 +854,8 @@ export const useSystemStore = defineStore('system', () => {
     dailyHabits,
     syncKey,
     syncStatus,
+    dailyFreeTaskAdditions,
+    lastFreeTaskResetDate,
     
     // 计算属性
     completedTasksCount,
@@ -862,7 +906,9 @@ export const useSystemStore = defineStore('system', () => {
       'dailyHabits',
       'syncKey',
       'mockDay',
-      'timeOffset'
+      'timeOffset',
+      'dailyFreeTaskAdditions',
+      'lastFreeTaskResetDate'
     ]
   }
 })
