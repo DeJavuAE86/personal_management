@@ -224,8 +224,16 @@
             </select>
           </div>
           
+          <!-- 工作日免费次数提示 -->
+          <div v-if="isWorkday" class="bg-green-100 border border-green-400 rounded-xl p-4 mb-4">
+            <div class="flex items-center gap-2 text-green-600 font-medium">
+              <span>🎁</span>
+              <span>每日免费次数：{{ systemStore.dailyFreeTaskAdditions }}/2 次</span>
+            </div>
+          </div>
+          
           <!-- 工作日违约金警告 -->
-          <div v-if="isWorkday" class="bg-red-100 border border-red-400 rounded-xl p-4 mb-4">
+          <div v-if="isWorkday && systemStore.dailyFreeTaskAdditions <= 0" class="bg-red-100 border border-red-400 rounded-xl p-4 mb-4">
             <div class="flex items-center gap-2 text-red-600 font-medium">
               <span>🚨</span>
               <span>违约警告：工作日临时追加计划，每次发布将扣除 2 分违约金！</span>
@@ -328,7 +336,6 @@
                 </div>
               </div>
               <button 
-                v-if="!isWorkday"
                 class="p-2 text-red-600 hover:bg-red-100 rounded-full transition-all"
                 @click="handleDeleteTask(task.id)"
                 title="删除任务"
@@ -498,15 +505,25 @@ const handleSubmitTask = () => {
   }
   
   // 工作日违约金惩罚
+  let isPenaltyDeducted = false
+  let isUsingFreeAddition = false
+  
   if (isWorkday.value) {
-    if (systemStore.totalScore < 2) {
-      alert('余额不足，禁止发布任务！')
-      return
+    // 优先使用免费次数
+    if (systemStore.dailyFreeTaskAdditions > 0) {
+      isUsingFreeAddition = true
+    } else {
+      // 免费次数不足，扣除违约金
+      if (systemStore.totalScore < 2) {
+        alert('余额不足，禁止发布任务！')
+        return
+      }
+      // 扣除违约金
+      systemStore.totalScore -= 2
+      isPenaltyDeducted = true
+      // 播放警告音效
+      playWarning()
     }
-    // 扣除违约金
-    systemStore.totalScore -= 2
-    // 播放警告音效
-    playWarning()
   }
   
   // 添加任务
@@ -519,7 +536,7 @@ const handleSubmitTask = () => {
     plannedDate: taskForm.value.plannedDate,
     // 传递任务绩效分设置
     perfSettings: taskForm.value.perfSettings
-  })
+  }, isPenaltyDeducted, isUsingFreeAddition)
   
   // 清空表单
   taskForm.value = {
@@ -547,7 +564,15 @@ const handleSubmitTask = () => {
   }
   
   // 显示成功提示
-  successMessage.value = isWorkday.value ? '任务发布成功！已扣除 2 分违约金' : '任务发布成功！'
+  if (isWorkday.value) {
+    if (isUsingFreeAddition) {
+      successMessage.value = '任务发布成功！使用了 1 次免费添加机会'
+    } else {
+      successMessage.value = '任务发布成功！已扣除 2 分违约金'
+    }
+  } else {
+    successMessage.value = '任务发布成功！'
+  }
   showSuccessToast.value = true
   
   // 3秒后隐藏提示
@@ -558,18 +583,35 @@ const handleSubmitTask = () => {
 
 // 处理任务删除
 const handleDeleteTask = (taskId: string) => {
-  if (isWorkday.value) {
-    alert('战时死锁：工作日执行期已开启，所有历史任务禁止删除、禁止篡改！')
-    return
-  }
-  
-  if (confirm('确定要删除这个任务吗？')) {
-    systemStore.removeTask(taskId)
-    successMessage.value = '任务删除成功！'
-    showSuccessToast.value = true
-    setTimeout(() => {
-      showSuccessToast.value = false
-    }, 3000)
+  try {
+    const task = systemStore.allTasks.find(t => t.id === taskId)
+    if (!task) return
+    
+    // 检查是否为待执行任务
+    if (task.status === 'DONE' || task.status === 'VOID') {
+      alert('只能删除待执行任务！')
+      return
+    }
+    
+    // 执行日删除规则：只能删除当天添加的任务
+    if (isWorkday.value) {
+      if (task.createdDate !== systemStore.currentDate) {
+        alert('执行日只能删除当天添加的任务！')
+        return
+      }
+    }
+    
+    if (confirm('确定要删除这个任务吗？删除后无法恢复！')) {
+      systemStore.removeTask(taskId)
+      successMessage.value = '任务删除成功！'
+      showSuccessToast.value = true
+      setTimeout(() => {
+        showSuccessToast.value = false
+      }, 3000)
+    }
+  } catch (error) {
+    console.error('删除任务失败:', error)
+    alert('删除任务失败，请稍后重试')
   }
 }
 
