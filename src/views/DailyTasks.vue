@@ -78,7 +78,7 @@
       <div class="flex justify-between items-center mb-4">
         <h2 class="font-semibold text-gray-900 text-lg">今日进度</h2>
         <span class="text-sm text-gray-600 font-medium">
-          {{ systemStore.completedTasksCount }} / {{ systemStore.currentDayTasks.length }} 已完成
+          {{ completedTasksForSelectedDate }} / {{ totalTasksForSelectedDate }} 已完成
         </span>
       </div>
       <div class="w-full bg-slate-100 rounded-full h-3">
@@ -251,13 +251,24 @@ const minTasks = computed(() => systemStore.allTasks.filter((task: any) => task.
 const standardTasks = computed(() => systemStore.allTasks.filter((task: any) => task.capacity === 'STANDARD' && task.plannedDate === selectedDate.value && task.status !== 'DONE'))
 const extraTasks = computed(() => systemStore.allTasks.filter((task: any) => task.capacity === 'EXTRA' && task.plannedDate === selectedDate.value && task.status !== 'DONE'))
 
-const progressPercentage = computed(() => {
-  const total = minTasks.value.length + standardTasks.value.length + extraTasks.value.length
-  if (total === 0) return 0
-  const completed = systemStore.allTasks.filter((task: any) => 
+const totalTasksForSelectedDate = computed(() => {
+  return systemStore.allTasks.filter((task: any) => 
+    (task.capacity === 'MIN' || task.capacity === 'STANDARD' || task.capacity === 'EXTRA') && 
+    task.plannedDate === selectedDate.value
+  ).length
+})
+
+const completedTasksForSelectedDate = computed(() => {
+  return systemStore.allTasks.filter((task: any) => 
     (task.capacity === 'MIN' || task.capacity === 'STANDARD' || task.capacity === 'EXTRA') && 
     task.plannedDate === selectedDate.value && task.status === 'DONE'
   ).length
+})
+
+const progressPercentage = computed(() => {
+  const total = totalTasksForSelectedDate.value
+  if (total === 0) return 0
+  const completed = completedTasksForSelectedDate.value
   return (completed / total) * 100
 })
 
